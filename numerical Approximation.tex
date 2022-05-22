@@ -1,0 +1,327 @@
+\documentclass{article}
+\usepackage{listings}
+\lstset{language=Matlab,frame=shadowbox,
+	rulesepcolor=\color{red!20!green!20!blue!20},
+	keywordstyle=\color{blue!90}\bfseries,
+	showstringspaces=false,
+	numbers=left,
+	numberstyle=\tiny,
+	stringstyle=\ttfamily,
+	breaklines=true,
+	extendedchars=false,}%代码语言使用的是matlab
+\usepackage{xcolor}
+\usepackage{color}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\usepackage{ctex}
+\usepackage{graphicx}
+\usepackage[a4paper, body={18cm,22cm}]{geometry}
+\usepackage{amsmath,amssymb,amstext,wasysym,enumerate,graphicx}
+\usepackage{float,abstract,booktabs,indentfirst,amsmath}
+\usepackage{amsthm, bm, hyperref, mathrsfs, tikz, color, framed}
+\usepackage{mathrsfs}
+\usepackage{array}
+\usepackage{booktabs} %调整表格线与上下内容的间隔
+\usepackage{multirow}
+\usepackage{diagbox}
+\renewcommand\arraystretch{1.4}
+\usepackage{indentfirst}
+\setlength{\parindent}{2em}
+
+\geometry{left=2.8cm,right=2.2cm,top=2.5cm,bottom=2.5cm}
+%\geometry{left=3.18cm,right=3.18cm,top=2.54cm,bottom=2.54cm}
+
+\graphicspath{{figures/}}
+
+\title{\heiti 《数值逼近实验报告》 }
+\newcounter{theoremname}
+\newenvironment{theorem}{\begin{shaded}\stepcounter{theoremname}\par\noindent\textbf{定理\arabic{theoremname}. }}{\end{shaded}\par}
+\definecolor{shadecolor}{RGB}{241, 241, 255}
+\newcounter{definitionname}
+\newenvironment{definition}{\begin{shaded}\stepcounter{definitionname}\par\noindent\textbf{定义\arabic{definitionname}. }}{\end{shaded}\par}
+\newcounter{problemname}
+\newenvironment{problem}{\begin{shaded}\stepcounter{problemname}\par\noindent\textbf{题目\arabic{problemname}. }}{\end{shaded}\par}
+\newenvironment{solution}{\par\noindent\textbf{解答. }}{\par}
+\newenvironment{note}{\par\noindent\textbf{注记. }}{\par}
+
+\begin{document}
+	
+	\maketitle
+	
+	\vspace{5cm}
+	
+	
+	\begin{table}[h]
+		\centering
+		\begin{Large}
+			\begin{tabular}{p{3cm} p{7cm}<{\centering}}
+				学  \qquad  校: &  华中科技大学     \\ \cline{2-2}
+				学 \qquad 院:      & 数学与统计学院   \\ \cline{2-2}
+				成  \qquad  员: & 何嘉怡 \\ \cline{2-2}
+				学\qquad 号： &U201916521 \\ \cline{2-2}
+				专\qquad 业:&信息与计算数学\\ \cline{2-2}
+				指导教师:       &  \\ \cline{2-2}
+			\end{tabular}
+		\end{Large}		
+	\end{table}
+	
+	\begin{table}[h]
+		
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{p{2cm} p{5cm}<{\centering}}
+			评\qquad 分:&  \\ \cline{2-1}
+		\end{tabular}
+	\end{table}
+	\newpage
+	
+	\tableofcontents
+	\newpage
+	
+	\section{实验目的}
+	我们知道第一类切比雪夫零点是具有最优意义的插值节点，而切比雪夫极值点和勒让德多项式的零点以及极值点是接近最优意义的插值节点，因而这些节点都是非常理想的插值节点。下面我们利用Matlab来编写程序，使用重心公式、牛顿形式或者拉格朗日形式计算各类节点的插值多项式，观察他们的逼近情况。
+	研究$f(x)=\left |x \right |+x^2+\sin(10x)$的多项式逼近.
+	\section{实验原理}
+	数值逼近的知识点
+	\section{实验过程}
+	\subsection{利用重心公式求切比雪夫零点的插值多项式}
+	代码如下：
+	\begin{lstlisting}
+		function v=interp(f,n,u)
+		
+		xx=-1:2/u:1;
+		x=cos((1:2:(2*n+1))'*pi/(2*n));
+		y =f(x);
+		w = sin((1:2:(2*n+1))'*pi/(2*n+2)).*(-1).^((0:n)');
+		
+		numer=zeros(size(u));
+		denom=zeros(size(u));
+		exact=zeros(size(u));
+		
+		for j=1:n+1
+		del=xx-x(j);
+		temp=w(j)./del;
+		numer=numer+temp*y(j);
+		denom=denom+temp;
+		exact(del==0)=j;
+		end
+		
+		v=numer ./denom;
+		jj=find(exact);
+		v(jj)=y(exact(jj));
+		
+		plot(xx,v);
+	\end{lstlisting}
+	\subsection {利用重心形式求勒让德零点的插值多项式}
+	\begin{description}
+		\item[step1] 首先我们求出n次勒让德多项式的零点
+		代码如下:\\
+		子程序
+		\begin{lstlisting}
+			function x=jp(N,alpha,beta)
+			
+			n=1:N;
+			
+			a(1)=(alpha+beta+2)/2;
+			
+			b(1)=(beta-alpha)/2;
+			
+			a([2:N+1])=(2*n+alpha+beta+1).*(2*n+alpha+beta+2)./(2*(n+1).*(n+alpha+beta+1));
+			
+			b([2:N+1])=(alpha*alpha-beta*beta)*(2*n+alpha+beta+1)./(2*(n+1).*(n+alpha+beta+1).*(2*n+alpha+beta));
+			
+			c=(n+alpha).*(n+beta).*(2*n+alpha+beta+2)./((n+1).*(n+alpha+beta+1).*(2*n+alpha+beta));
+			
+			A=diag(b./a)+diag(1./a([1:N]),1)+diag(c./a([2:N+1]),-1);
+			
+			x=sort(eig(A))';
+		\end{lstlisting}
+		主程序
+		\begin{lstlisting}
+			function x=djp(N,alpha,beta,m)
+			
+			N1=N-m;
+			
+			alpha1=alpha+m;
+			
+			beta1=beta+m;
+			
+			x=jp(N1,alpha1,beta1);
+		\end{lstlisting}
+		\item[step2] 下面我们是利用重心公式求解勒让德零点的插值多项式，代码如下：
+		\begin{lstlisting}
+			function v=Le_interp(f,n,u)
+			xx=-1:2/u:1;
+			x=djp(n,0,0,0);
+			y =f(x);
+			w=ones(n+1);
+			
+			for j=1:n+1
+			for i=1:n+1
+			if i~=j
+			w(j)=w(j)/(x(j)-x(i));
+			end
+			end
+			end
+			
+			numer=zeros(size(u));
+			denom=zeros(size(u));
+			exact=zeros(size(u));
+			
+			for j=1:n+1
+			del=xx-x(j);
+			temp=w(j)./del;
+			numer=numer+temp*y(j);
+			denom=denom+temp;
+			exact(del==0)=j;
+			end
+			
+			v=numer ./denom;
+			jj=find(exact);
+			v(jj)=y(exact(jj));
+			plot(xx,v);
+		\end{lstlisting}
+	\end{description}
+	\subsection{利用重心公式求勒让德—洛巴特点的插值多项式}
+	\begin{lstlisting}
+		function v=Le2_interp(f,n,u)
+		xx=-1:2/u:1;
+		q=djp(n-1,0,0,1);
+		x=[-1;q';1];
+		y =f(x);
+		w=ones(n+1);
+		
+		for j=1:n+1
+		for i=1:n+1
+		if i~=j
+		w(j)=w(j)/(x(j)-x(i));
+		end
+		end
+		end
+		
+		numer=zeros(size(u));
+		denom=zeros(size(u));
+		exact=zeros(size(u));
+		
+		for j=1:n+1
+		del=xx-x(j);
+		temp=w(j)./del;
+		numer=numer+temp*y(j);
+		denom=denom+temp;
+		exact(del==0)=j;
+		end
+		
+		v=numer ./denom;
+		jj=find(exact);
+		v(jj)=y(exact(jj));
+		plot(xx,v);
+		plot(xx,f(xx));
+	\end{lstlisting} 
+	
+	\subsection{利用重心公式求埃米尔特插值多项式}
+	由于切比雪夫零点是最优零点，所以这里我们一致用切比雪夫零点作为节点.\\
+	\begin{lstlisting}
+		function v=hermite_interp(x,y,dy,n,u)
+		m=length(u);
+		w=ones(n+1,1);
+		
+		for j=1:n+1
+		for k=1:n+1
+		if k~=j
+		w(j)=w(j)/(x(j)-x(k));
+		end
+		end
+		end
+		
+		A=w.^2;
+		v=zeros(m,1);
+		d=zeros(n+1,1);
+		
+		for j=1:n+1
+		for k=1:n+1
+		if k~=j
+		d(j)=d(j)+1/(x(j)-x(k));
+		end
+		end
+		end
+		
+		for j=1:n+1
+		B(j)=-2*A(j)*d(j);
+		end
+		
+		temp1=zeros(size(u));
+		temp2=zeros(size(u));
+		temp3=zeros(size(u));
+		exact=zeros(size(u));
+		
+		for j=1:n+1
+		del=u-x(j);
+		dell=del.^2;
+		
+		B(j)=-2*A(j)*d(j);
+		temp1=temp1+y(j)*(A(j)./dell+B(j)./del);
+		temp3=temp3+A(j)./dell+B(j)./del;
+		exact(del==0)=j;
+		end
+		
+		v=(temp1+temp2)./temp3;
+		jj=find(exact);
+		v(jj)=y(exact(jj));
+	\end{lstlisting}
+	\section{实验结果}
+	\subsection{节点为切比雪夫零点的插值多项式逼近}
+	在命令窗口输入：
+	\begin{lstlisting}
+		f=@(t) abs(t)+t.^2+sin(10*t);
+		>> v=Le2_interp(f,n,u)
+	\end{lstlisting}
+	结果为：
+	\begin{figure}[htbp]
+		\includegraphics[width=0.3\textwidth]{1}
+		\includegraphics[width=0.3\textwidth]{2}
+		\includegraphics[width=0.3\textwidth]{3}
+	\end{figure}
+	以上分别是n=30,n=10,n=7时候的情况.
+	\subsection{节点为勒让德零点的插值多项式逼近}
+	在命令窗口输入：
+	\begin{lstlisting}
+		f=@(t) abs(t)+t.^2+sin(10*t);
+		>> v=Le_interp(f,n,u)
+	\end{lstlisting}
+	结果为：
+	\begin{figure}[htbp]
+		\includegraphics[width=0.3\textwidth]{4}
+		\includegraphics[width=0.3\textwidth]{5}
+		\includegraphics[width=0.3\textwidth]{6}
+	\end{figure}
+	\subsection{节点为勒让德—洛巴特点的插值多项式逼近}
+	在命令窗口输入：
+	\begin{lstlisting}
+		f=@(t) abs(t)+t.^2+sin(10*t);
+		>> v=Le_interp(f,n,u)
+	\end{lstlisting}
+	结果为：
+	\begin{figure}[htbp]
+		\includegraphics[width=0.3\textwidth]{7}
+		\includegraphics[width=0.3\textwidth]{8}
+		\includegraphics[width=0.3\textwidth]{9}
+	\end{figure}
+	\subsection{利用重心公式求埃米尔特插值多项式}
+	\begin{lstlisting}
+		n=10;x=cos((0:n)'*pi/n);
+		y =sin(x);
+		dy=cos(x);
+		u=linspace(-1,1,1000)';
+		v=hermite_interp(x,y,dy,n,u);
+		plot(x,y,'or',u,v,'b')
+	\end{lstlisting}
+	\begin{figure}[htbp]
+		\includegraphics[width=0.3\textwidth]{10}
+		\includegraphics[width=0.3\textwidth]{11}
+		\includegraphics[width=0.3\textwidth]{12}
+	\end{figure}
+	以上分别是n=7，n=10，n=30时的情况.\\
+	但是，这里我用的节点是切比雪夫极值点，最开始用的是切比雪夫零点，但是我发现每次图像都非常奇怪，不知道问题出在哪里.
+	\section{实验问题}
+	
+	
+	
+\end{document}
